@@ -22,6 +22,7 @@ from supabase import create_client
 from config import ConfigError, Settings, load_settings
 from database.repository import TrackRepository
 from handlers import media, start
+from health import start_health_server
 from middlewares import OwnerOnlyMiddleware
 from services.soundcloud import SoundCloudService
 from services.storage import StorageService
@@ -95,19 +96,23 @@ async def run(settings: Settings) -> None:
     dispatcher.include_router(start.router)
     dispatcher.include_router(media.router)
 
-    await _best_effort(
-        lambda: bot.set_my_commands(
-            [
-                BotCommand(command="start", description="Начать работу с MUSE"),
-                BotCommand(command="help", description="Как добавить музыку"),
-                BotCommand(command="stats", description="Размер библиотеки"),
-            ]
-        ),
-        "set_my_commands",
-        attempts=2,
+    health_runner = (
+        await start_health_server(settings.port) if settings.port else None
     )
 
     try:
+        await _best_effort(
+            lambda: bot.set_my_commands(
+                [
+                    BotCommand(command="start", description="Начать работу с MUSE"),
+                    BotCommand(command="help", description="Как добавить музыку"),
+                    BotCommand(command="stats", description="Размер библиотеки"),
+                ]
+            ),
+            "set_my_commands",
+            attempts=2,
+        )
+
         await _best_effort(
             lambda: bot.delete_webhook(drop_pending_updates=False),
             "delete_webhook",
@@ -136,6 +141,8 @@ async def run(settings: Settings) -> None:
                 )
                 await asyncio.sleep(10)
     finally:
+        if health_runner is not None:
+            await health_runner.cleanup()
         await bot.session.close()
 
 

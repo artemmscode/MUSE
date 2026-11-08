@@ -30,6 +30,19 @@ def _optional(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
+def _optional_port(name: str) -> int | None:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return None
+    try:
+        port = int(raw)
+    except ValueError as error:
+        raise ConfigError(f"{name} должна быть целым числом.") from error
+    if not 1 <= port <= 65535:
+        raise ConfigError(f"{name} должна быть в диапазоне 1..65535.")
+    return port
+
+
 def _int(name: str, default: int) -> int:
     raw = os.getenv(name, "").strip()
     if not raw:
@@ -70,6 +83,7 @@ class Settings:
     soundcloud_client_id: str = ""
     soundcloud_client_secret: str = ""
     telegram_proxy: str = ""
+    port: int | None = None
     log_level: str = "INFO"
     allowed_extensions: frozenset[str] = field(
         default_factory=lambda: frozenset(
@@ -145,5 +159,6 @@ def load_settings() -> Settings:
         soundcloud_client_id=_optional("SOUNDCLOUD_CLIENT_ID"),
         soundcloud_client_secret=_optional("SOUNDCLOUD_CLIENT_SECRET"),
         telegram_proxy=_optional("TELEGRAM_PROXY"),
+        port=_optional_port("PORT"),
         log_level=_optional("LOG_LEVEL", "INFO").upper(),
     )

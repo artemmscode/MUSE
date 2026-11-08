@@ -746,7 +746,9 @@ git push
 
 Бот — это long-running polling-процесс. GitHub Pages его не запускает. Нужен хостинг постоянного процесса.
 
-### Вариант A. Render Blueprint (рекомендуется для простоты)
+### Вариант A. Render: бесплатный web service + пингер (рекомендуется)
+
+Бот умеет отдавать HTTP-эндпоинт `/health`, поэтому его можно запустить как **бесплатный Web Service**. Чтобы Render не усыплял сервис через 15 минут простоя, этот эндпоинт должен регулярно открывать внешний монитор.
 
 **Куда зайти:** <https://dashboard.render.com> → войдите через GitHub.
 
@@ -754,7 +756,7 @@ git push
 
 1. **New** → **Blueprint**.
 2. Подключите GitHub и выберите репозиторий `MUSE`.
-3. Render прочитает `render.yaml` и предложит создать сервис `muse-bot` типа **Worker**.
+3. Render прочитает `render.yaml` и предложит создать сервис `muse-bot` типа **Web Service**, план **Free**, регион Frankfurt.
 4. Нажмите **Apply**.
 5. Откройте созданный сервис → **Environment** и заполните переменные, помеченные `sync: false`:
    - `TELEGRAM_BOT_TOKEN`
@@ -766,15 +768,22 @@ git push
    - `SITE_URL` — **задеплоенный URL сайта**, например `https://<username>.github.io/MUSE`
    - `SOUNDCLOUD_CLIENT_ID` / `SOUNDCLOUD_CLIENT_SECRET` (можно пустыми)
 6. Нажмите **Save changes** → **Manual Deploy** → **Deploy latest commit**.
+7. Скопируйте URL сервиса: `https://muse-bot-xxxx.onrender.com`. Откройте `https://muse-bot-xxxx.onrender.com/health` — должно вернуться `{"status":"ok"}`.
+8. Заведите бесплатный монитор, иначе сервис уснёт через 15 минут:
+   - **UptimeRobot** (<https://uptimerobot.com>) → New Monitor → HTTP(s) → URL `https://muse-bot-xxxx.onrender.com/health` → интервал **5 минут**;
+   - или **cron-job.org** → URL тот же → каждые 5 минут.
 
-**Важно про тариф:** Render background workers **не входят в бесплатный тариф**. `render.yaml` использует `plan: starter` (ориентировочно ~$7/мес, проверяйте актуальную цену). Бесплатные web services на Render засыпают после простоя, поэтому для polling-бота они не подходят.
+**Про бесплатный тариф:** web service бесплатен, но засыпает после 15 минут без HTTP-запросов и просыпается около минуты. Пингер раз в 5 минут не даёт ему уснуть. Лимит — 750 часов инстанса в месяц; одной службы 24/7 (≈730 ч) хватает. Если пингер не настроить, бот будет спать, но треки не потеряются: Telegram хранит непрочитанные апдейты 24 часа, и они обработаются после пробуждения.
+
+**Альтернатива без пингера:** платный **Background Worker** (`plan: starter`, ориентировочно ~$7/мес). В `render.yaml` замените `type: web` на `type: worker`, `plan: free` на `plan: starter` и удалите строку `healthCheckPath`.
 
 **Как проверить:**
 
 1. Render → ваш сервис → **Logs**.
-2. Должно появиться `MUSE Bot started. Owner allowlist: ...`.
-3. Отправьте боту `/start` — он ответит.
-4. Отправьте трек — он появится на сайте.
+2. Должно появиться `MUSE Bot started. Owner allowlist: ...` и `Health endpoint listening on 0.0.0.0:...`.
+3. Откройте `/health` — ответ `{"status":"ok"}`.
+4. Отправьте боту `/start` — он ответит.
+5. Отправьте трек — он появится на сайте.
 
 **Если лог показывает `ConfigError`:** какая-то переменная не заполнена или `MUSE_OWNER_ID` не UUID.
 
@@ -830,7 +839,7 @@ python -m venv .venv
 
 **Ограничения:** пока компьютер спит или выключен, бот не принимает музыку. Сайт при этом работает всегда — треки уже лежат в Supabase. При обрыве сети бот сам переподключается.
 
-**Честно:** полностью бесплатного и надёжного «always-on» хостинга для Telegram-бота сейчас почти нет. Самый простой путь — Render Starter. Если бюджет критичен — Oracle Cloud Free VM или собственный сервер.
+**Честно:** бесплатный Render-вариант требует внешнего пингера и укладывается в лимит 750 часов в месяц. Это рабочий и распространённый приём, но платный worker надёжнее: он не зависит от монитора. Полностью бесплатные альтернативы без пингера — Oracle Cloud Always Free VM или собственный компьютер.
 
 **После смены URL сайта** обновите `SITE_URL` в Render, иначе кнопка «Открыть в MUSE» будет вести на старый адрес.
 
@@ -957,15 +966,15 @@ supabase secrets set \
 | **Telegram Bot API** | Бот | Да | Лимит скачивания файлов ботом — 20 МБ. |
 | **Supabase** | PostgreSQL, Auth, Storage, Realtime, Edge Functions | Да, Free tier | Обычно 500 МБ БД, 1 ГБ Storage, 5 ГБ трафика, 2 проекта; проект может «уснуть» после недели простоя. Проверьте актуальные лимиты. |
 | **GitHub** | Репозиторий, Actions, Pages | Да | Pages для public-репозиториев бесплатно. Для private нужен Pro/Team. Actions: 2000 минут/мес для private, для public — бесплатно. |
-| **Render** | Хостинг бота (Worker) | Нет для worker | Starter worker ~$7/мес. Бесплатные web services засыпают — для polling-бота не подходят. |
+| **Render** | Хостинг бота | Да (web service + пингер) | Free web service засыпает через 15 минут без HTTP-запросов; `/health` + UptimeRobot раз в 5 минут держат его awake. Лимит 750 ч/мес. Без пингера — Starter worker ~$7/мес. |
 | **Домен** | Красивый адрес | Нет | ~$10–15/год у регистратора. Опционально. |
 | **SoundCloud API** | Официальные метаданные | Да | Нужна регистрация приложения на <https://soundcloud.com/you/apps>. Без него — официальный oEmbed. |
 | **Cloudflare** (опционально) | DNS, прокси, HTTPS | Да | Не обязателен. |
 | **FFmpeg** | Обработка аудио | Да | **Не требуется** этим проектом: бот сохраняет оригинал без перекодирования. |
 
-**Минимальный бесплатный сценарий:** Telegram + Supabase Free + GitHub Pages + локально запущенный бот (пока компьютер включён). Сайт будет работать, бот — только когда запущен.
+**Минимальный бесплатный сценарий:** Telegram + Supabase Free + GitHub Pages + бот на своём компьютере (пока он включён) **или** бесплатный Render web service с пингером `/health`.
 
-**Рекомендуемый рабочий сценарий:** Telegram + Supabase Free/Pro + GitHub Pages + Render Starter (~$7/мес) + опционально домен.
+**Рекомендуемый рабочий сценарий:** Telegram + Supabase Free/Pro + GitHub Pages + Render Starter (~$7/мес) + опционально домен. Бюджетный always-on вариант — Render Free + UptimeRobot.
 
 ---
 

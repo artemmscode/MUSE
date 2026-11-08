@@ -1,24 +1,30 @@
 # ════════════════════════════════════════════════════════════════════════════
-# MUSE Bot — Render Blueprint
+# MUSE Bot — Render Blueprint (free web service)
 #
-# A Telegram bot is a long-running polling process, so it must run as a
-# background worker. Render background workers are NOT part of the free tier;
-# the cheapest always-on option is the Starter worker (~$7/month at the time
-# of writing). See README step 16 for free alternatives.
+# Render free web services spin down after 15 minutes without incoming HTTP
+# traffic. A polling Telegram bot generates no traffic, so the bot also serves
+# a tiny /health endpoint and an external uptime monitor pings it every
+# 5 minutes. See README step 16 for the exact setup.
 #
 # Deploy: Render Dashboard → New → Blueprint → connect this repository.
 # Then fill every env var marked `sync: false` in the dashboard.
+#
+# Want to drop the pinger? Switch to a paid background worker instead:
+#   type: worker
+#   plan: starter
+#   (remove healthCheckPath)
 # ════════════════════════════════════════════════════════════════════════════
 
 services:
-  - type: worker
+  - type: web
     name: muse-bot
     runtime: python
-    plan: starter
+    plan: free
     region: frankfurt
     rootDir: bot
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main.py
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
