@@ -17,6 +17,17 @@ interface LocationState {
   from?: string;
 }
 
+/**
+ * `from` is captured from the URL, which the GitHub Pages fallback used to
+ * leave with a double slash (`//login`). Only same-origin absolute paths are
+ * accepted, and auth pages are never a valid post-sign-in destination.
+ */
+function resolveRedirectTarget(from: string | undefined): string {
+  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/';
+  if (/^\/(login|reset-password)(?:[?#]|$)/.test(from)) return '/';
+  return from;
+}
+
 export function LoginPage() {
   useDocumentTitle('Sign in');
   const navigate = useNavigate();
@@ -30,7 +41,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'signin' | 'reset'>('signin');
 
-  const redirectTo = (location.state as LocationState | null)?.from ?? '/';
+  const redirectTo = resolveRedirectTarget((location.state as LocationState | null)?.from);
 
   useEffect(() => {
     setError(null);

@@ -28,14 +28,18 @@
         var redirect = window.location.search;
         if (redirect && redirect.indexOf('?/') === 0) {
           var route = redirect
-            .slice(1)
+            .slice(2)
             .split('&')
             .map(function (part) {
               return part.replace(/~and~/g, '&');
             })
             .join('?');
           var base = window.location.pathname.replace(/\/index\.html$/, '/');
-          window.history.replaceState(null, null, base.replace(/\/$/, '') + route + window.location.hash);
+          window.history.replaceState(
+            null,
+            null,
+            base.replace(/\/+$/, '') + '/' + route.replace(/^\/+/, '') + window.location.hash,
+          );
         }
       })();
     </script>

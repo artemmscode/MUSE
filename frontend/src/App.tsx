@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { useAuth, useAuthBootstrap } from '@/hooks/useAuth';
 import { isSupabaseConfigured } from '@/lib/env';
+import { SplashScreen } from '@/pages/SplashScreen';
 import { ConfigScreen } from '@/pages/ConfigScreen';
 import { LoginPage } from '@/pages/LoginPage';
 import { HomePage } from '@/pages/HomePage';
@@ -26,7 +27,7 @@ const routerBasename = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
 function LoginRoute() {
   const { session, loading, initialized } = useAuth();
-  if (loading || !initialized) return null;
+  if (loading || !initialized) return <SplashScreen />;
   if (session) return <Navigate to="/" replace />;
   return <LoginPage />;
 }

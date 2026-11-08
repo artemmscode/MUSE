@@ -9,11 +9,12 @@ export function ProtectedRoute() {
   if (loading || !initialized) return <SplashScreen />;
 
   if (!session) {
+    const from = `${location.pathname}${location.search}`.replace(/^\/{2,}/, '/');
     return (
       <Navigate
         to="/login"
         replace
-        state={{ from: `${location.pathname}${location.search}` }}
+        state={{ from }}
       />
     );
   }
