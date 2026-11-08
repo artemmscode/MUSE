@@ -1,0 +1,46 @@
+# ─── Secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+
+# ─── Node / frontend ────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ─── Python / bot ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+bot/.env
+
+# ─── Supabase CLI ───────────────────────────────────────────────────────────
+supabase/.temp/
+supabase/.branches/
+.supabase/
+
+# ─── Editors / OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+
+# ─── Logs / misc ────────────────────────────────────────────────────────────
+*.log
+coverage/

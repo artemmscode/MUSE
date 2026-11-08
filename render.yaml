@@ -1,0 +1,51 @@
+# ════════════════════════════════════════════════════════════════════════════
+# MUSE Bot — Render Blueprint
+#
+# A Telegram bot is a long-running polling process, so it must run as a
+# background worker. Render background workers are NOT part of the free tier;
+# the cheapest always-on option is the Starter worker (~$7/month at the time
+# of writing). See README step 16 for free alternatives.
+#
+# Deploy: Render Dashboard → New → Blueprint → connect this repository.
+# Then fill every env var marked `sync: false` in the dashboard.
+# ════════════════════════════════════════════════════════════════════════════
+
+services:
+  - type: worker
+    name: muse-bot
+    runtime: python
+    plan: starter
+    region: frankfurt
+    rootDir: bot
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python main.py
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_OWNER_ID
+        sync: false
+      - key: TELEGRAM_ALLOWED_IDS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: MUSE_OWNER_ID
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: AUDIO_BUCKET
+        value: audio
+      - key: COVERS_BUCKET
+        value: covers
+      - key: MAX_UPLOAD_MB
+        value: "20"
+      - key: SOUNDCLOUD_CLIENT_ID
+        sync: false
+      - key: SOUNDCLOUD_CLIENT_SECRET
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO
