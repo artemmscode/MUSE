@@ -33,6 +33,7 @@ class SoundCloudTrack:
     title: str
     artist: str
     source_url: str
+    album: str | None = None
     cover_url: str | None = None
     duration: int | None = None
     source_track_id: str | None = None
@@ -128,11 +129,14 @@ class SoundCloudService:
             return None
 
         user = data.get("user") or {}
+        publisher = data.get("publisher_metadata") or {}
+        album = publisher.get("album_title") or data.get("album") or None
         downloadable = bool(data.get("downloadable")) and bool(data.get("download_url"))
         return SoundCloudTrack(
             title=(data.get("title") or "Без названия")[:200],
             artist=(user.get("username") or "Unknown artist")[:200],
             source_url=data.get("permalink_url") or url,
+            album=(str(album).strip()[:200] or None) if album else None,
             cover_url=_large_artwork(data.get("artwork_url")),
             duration=int(round((data.get("duration") or 0) / 1000)) or None,
             source_track_id=str(data.get("id")) if data.get("id") else None,

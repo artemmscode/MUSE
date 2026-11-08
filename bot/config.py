@@ -69,6 +69,7 @@ class Settings:
     max_upload_bytes: int = 20 * 1024 * 1024
     soundcloud_client_id: str = ""
     soundcloud_client_secret: str = ""
+    telegram_proxy: str = ""
     log_level: str = "INFO"
     allowed_extensions: frozenset[str] = field(
         default_factory=lambda: frozenset(
@@ -143,5 +144,6 @@ def load_settings() -> Settings:
         max_upload_bytes=max_mb * 1024 * 1024,
         soundcloud_client_id=_optional("SOUNDCLOUD_CLIENT_ID"),
         soundcloud_client_secret=_optional("SOUNDCLOUD_CLIENT_SECRET"),
+        telegram_proxy=_optional("TELEGRAM_PROXY"),
         log_level=_optional("LOG_LEVEL", "INFO").upper(),
     )
