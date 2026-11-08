@@ -42,7 +42,7 @@ export function LoginPage() {
 
     if (mode === 'reset') {
       if (!email.trim()) {
-        setError('Enter the email attached to your MUSE account.');
+        setError('Enter your login or email.');
         return;
       }
       setLoading(true);
@@ -59,7 +59,7 @@ export function LoginPage() {
     }
 
     if (!email.trim() || !password) {
-      setError('Enter your email and password.');
+      setError('Enter your login and password.');
       return;
     }
 
@@ -158,13 +158,14 @@ export function LoginPage() {
 
             <form onSubmit={(event) => void handleSubmit(event)} className="mt-8 space-y-4">
               <Input
-                label="Email"
-                type="email"
+                label="Email or login"
+                type="text"
+                inputMode="email"
                 name="email"
-                autoComplete="email"
+                autoComplete="username"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
+                placeholder="elvaire"
                 icon={<Mail className="h-4 w-4" />}
                 required
               />
