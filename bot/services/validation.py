@@ -16,6 +16,10 @@ SOUNDCLOUD_HOSTS = frozenset(
     }
 )
 
+# Share links redirect to the canonical permalink, which is the only form the
+# official SoundCloud player accepts.
+SOUNDCLOUD_SHARE_HOSTS = frozenset({"on.soundcloud.com", "soundcloud.app.goo.gl"})
+
 _SOUNDCLOUD_PATH_RE = re.compile(
     r"^/[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-]+)*(?:/[A-Za-z0-9_.\-]+)?/?$"
 )
@@ -59,6 +63,18 @@ def normalize_soundcloud_url(value: str) -> str:
         kept.append(f"{key}={item}")
     query = f"?{'&'.join(kept)}" if kept else ""
     return f"https://{host}{path}{query}"
+
+
+def is_soundcloud_share_link(value: str) -> bool:
+    """True for short share links that must be resolved before embedding."""
+    candidate = value.strip()
+    if not candidate.lower().startswith(("http://", "https://")):
+        candidate = f"https://{candidate}"
+    try:
+        host = (urlparse(candidate).hostname or "").lower()
+    except ValueError:
+        return False
+    return host in SOUNDCLOUD_SHARE_HOSTS
 
 
 def extract_soundcloud_slug(value: str) -> str:

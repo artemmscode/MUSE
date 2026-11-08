@@ -4,6 +4,7 @@ from services.validation import (
     extract_soundcloud_slug,
     guess_mime_type,
     human_size,
+    is_soundcloud_share_link,
     is_soundcloud_url,
     normalize_soundcloud_url,
     safe_title_from_filename,
@@ -40,6 +41,15 @@ def test_slug_is_stable():
         extract_soundcloud_slug("https://soundcloud.com/Artist/Track?si=1")
         == "artist/track"
     )
+
+
+def test_detects_share_links_that_need_resolving():
+    assert is_soundcloud_share_link("https://on.soundcloud.com/SAPB9Rxz3HlK2CUqSS")
+    assert is_soundcloud_share_link("on.soundcloud.com/abc")
+    assert is_soundcloud_share_link("https://soundcloud.app.goo.gl/abc123")
+    assert not is_soundcloud_share_link("https://soundcloud.com/artist/track")
+    assert not is_soundcloud_share_link("https://example.com/artist/track")
+    assert not is_soundcloud_share_link("")
 
 
 def test_extension_of():

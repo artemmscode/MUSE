@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 import httpx
 
-from .validation import normalize_soundcloud_url
+from .validation import is_soundcloud_share_link, normalize_soundcloud_url
 
 logger = logging.getLogger(__name__)
 
@@ -168,8 +168,11 @@ class SoundCloudService:
         title = (data.get("title") or "Без названия").strip()
         author = (data.get("author_name") or "Unknown artist").strip()
 
-        # oEmbed sometimes returns "Artist - Title" in the title field.
-        if " - " in title and author.lower() not in title.lower():
+        # oEmbed returns either "Artist - Title" or "Title by Artist".
+        suffix = f" by {author}"
+        if author and title.lower().endswith(suffix.lower()) and len(title) > len(suffix):
+            title = title[: len(title) - len(suffix)].strip()
+        elif " - " in title and author.lower() not in title.lower():
             left, right = title.split(" - ", 1)
             if left.strip() and right.strip():
                 author, title = left.strip(), right.strip()
@@ -185,6 +188,19 @@ class SoundCloudService:
             download_url=None,
         )
 
+    async def _canonical_url(self, client: httpx.AsyncClient, url: str) -> str:
+        """Follow share links to the permalink the official widget can play."""
+        if not is_soundcloud_share_link(url):
+            return url
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+        except Exception as error:  # noqa: BLE001
+            logger.warning("SoundCloud share link resolution failed: %s", error)
+            return url
+        # The redirect appends share-tracking parameters; the widget needs the path.
+        return normalize_soundcloud_url(str(response.url).split("?", 1)[0])
+
     async def resolve(self, url: str) -> SoundCloudTrack:
         canonical = normalize_soundcloud_url(url)
         async with httpx.AsyncClient(
@@ -192,6 +208,7 @@ class SoundCloudService:
             follow_redirects=True,
             headers={"User-Agent": USER_AGENT},
         ) as client:
+            canonical = await self._canonical_url(client, canonical)
             track = await self._api_resolve(client, canonical)
             if track:
                 return track
