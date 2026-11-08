@@ -20,7 +20,19 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      // The Telegram Mini App SDK is optional. Load it without blocking the
+      // page: an unreachable CDN must never delay the app from booting.
+      (function () {
+        var script = document.createElement('script');
+        script.src = 'https://telegram.org/js/telegram-web-app.js';
+        script.async = true;
+        script.onload = function () {
+          window.dispatchEvent(new Event('muse:telegram-ready'));
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
     <title>MUSE — Private Music Library</title>
     <script>
       // GitHub Pages SPA fallback: restore the path saved by 404.html.

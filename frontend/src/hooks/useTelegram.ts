@@ -30,5 +30,19 @@ export function useTelegram(): {
     });
   }, []);
 
+  useEffect(() => {
+    const onReady = () => {
+      const app = getTelegramWebApp();
+      if (!app) return;
+      setState({
+        isMiniApp: isTelegramMiniApp(),
+        user: app.initDataUnsafe?.user ?? null,
+        platform: app.platform ?? null,
+      });
+    };
+    window.addEventListener('muse:telegram-ready', onReady);
+    return () => window.removeEventListener('muse:telegram-ready', onReady);
+  }, []);
+
   return state;
 }

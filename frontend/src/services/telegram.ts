@@ -49,6 +49,12 @@ export function initTelegram(): void {
   }
 }
 
+// The SDK is loaded asynchronously from index.html; initialise it whenever it
+// arrives, even if the app booted first.
+if (typeof window !== 'undefined') {
+  window.addEventListener('muse:telegram-ready', () => initTelegram());
+}
+
 export function telegramHaptic(
   type: 'light' | 'medium' | 'heavy' | 'success' | 'error' | 'selection' = 'light',
 ): void {
